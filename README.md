@@ -151,6 +151,7 @@ php artisan test
 Kalau ada error ini di localhost pas di run "php artisan server"
 - A temporary file could not be opened to write the process output: fopen(C:\WINDOWS\sf_proc_00.out.lock): Failed to open stream: Permission denied
 pakai command ini
+
 $root = 'pathfoldernya'
 New-Item -ItemType Directory -Force "$root\storage\framework\uploads" | Out-Null
 New-Item -ItemType Directory -Force "$root\storage\framework\process-tmp" | Out-Null
