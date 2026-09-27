@@ -1,0 +1,35 @@
+# Python virtual environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Local environment and editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Generated Python pipeline output
+/output/
+
+# Composer and npm dependencies
+**/vendor/
+**/node_modules/
+
+# Laravel local configuration and generated assets
+/laravel-app/.phpunit.result.cache
+/laravel-app/public/build/
+/laravel-app/public/hot
+/laravel-app/public/storage
+/laravel-app/database/*.sqlite
+/laravel-app/storage/app/private/*
+/laravel-app/storage/logs/*.log
+/laravel-app/bootstrap/cache/*.php
+
+# OS files
+Thumbs.db
+.DS_Store
