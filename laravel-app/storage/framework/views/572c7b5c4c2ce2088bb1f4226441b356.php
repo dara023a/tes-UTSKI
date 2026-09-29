@@ -43,12 +43,28 @@
 <?php endif; ?>
 
 <?php if(session('success')): ?>
-    <section class="wrap" style="padding-top:20px; padding-bottom:0;">
-        <div class="banner-info" style="border-color: #9ad3b1; background: #eefaf2; color: #1c5c3c;">
-            <?php echo e(session('success')); ?>
-
+    <div class="toast-container" id="toastContainer">
+        <div class="toast" id="successToast">
+            <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            <div class="toast-body">
+                <strong>Berhasil!</strong>
+                <div><?php echo e(session('success')); ?></div>
+            </div>
+            <button class="toast-close" onclick="document.getElementById('successToast').remove()">✕</button>
+            <div class="toast-progress"></div>
         </div>
-    </section>
+    </div>
+    <script>
+        setTimeout(() => {
+            const t = document.getElementById('successToast');
+            if (t) {
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(100%)';
+                t.style.transition = 'all 0.4s ease';
+                setTimeout(() => t.remove(), 400);
+            }
+        }, 4500);
+    </script>
 <?php endif; ?>
 
 <?php echo $__env->yieldContent('content'); ?>

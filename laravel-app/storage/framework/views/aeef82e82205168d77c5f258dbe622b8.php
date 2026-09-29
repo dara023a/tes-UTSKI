@@ -51,8 +51,47 @@
               </div>
 
               <div class="field">
-                <label>Jenis Attack</label>
-                <select name="attack_type" id="attackType" required>
+                <label style="margin-bottom:10px">Jenis Attack (Pilih Serangan)</label>
+                
+                <div class="attack-cards-grid" id="attackCardGrid">
+                  <div class="attack-card-option" data-val="jpeg">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
+                    <div class="opt-title">JPEG Compression</div>
+                    <div class="opt-desc">Kompresi lossy standar web &amp; medsos.</div>
+                  </div>
+                  
+                  <div class="attack-card-option" data-val="resize">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <div class="opt-title">Resize Murni</div>
+                    <div class="opt-desc">Mengubah resolusi/skala dimensi citra.</div>
+                  </div>
+
+                  <div class="attack-card-option" data-val="pure_crop">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2v14a2 2 0 002 2h14M18 22V8a2 2 0 00-2-2H2"/></svg>
+                    <div class="opt-title">Pure Crop</div>
+                    <div class="opt-desc">Memotong tepi citra tanpa meresize kembali.</div>
+                  </div>
+
+                  <div class="attack-card-option" data-val="crop_resize_back">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 00-9-9 9 9 0 00-9 9 9 9 0 009 9c2.3 0 4.4-.8 6-2.1"/><path d="M21 3v9h-9"/></svg>
+                    <div class="opt-title">Crop &amp; Resize Balik</div>
+                    <div class="opt-desc">Memotong lalu mengembalikan ke ukuran semula.</div>
+                  </div>
+
+                  <div class="attack-card-option" data-val="gaussian_noise">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="1"/><circle cx="6" cy="8" r="1"/><circle cx="18" cy="16" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="8" r="1"/></svg>
+                    <div class="opt-title">Gaussian Noise</div>
+                    <div class="opt-desc">Menambahkan gangguan acak Gaussian piksel.</div>
+                  </div>
+
+                  <div class="attack-card-option" data-val="brightness_contrast">
+                    <svg class="opt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 000-18z"/></svg>
+                    <div class="opt-title">Brightness &amp; Contrast</div>
+                    <div class="opt-desc">Mengubah kecerahan dan kontras warna citra.</div>
+                  </div>
+                </div>
+
+                <select name="attack_type" id="attackType" required style="display:none">
                   <option value="" disabled <?php echo e(old('attack_type', $run['attack_type'] ?? '') === '' ? 'selected' : ''); ?>>Pilih jenis attack</option>
                   <option value="jpeg" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'jpeg' ? 'selected' : ''); ?>>JPEG compression</option>
                   <option value="resize" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'resize' ? 'selected' : ''); ?>>Resize murni</option>
@@ -97,7 +136,7 @@
                 <input type="number" name="brightness_beta" step="any" value="<?php echo e(old('brightness_beta', 0)); ?>">
               </div>
 
-              <button class="btn btn-primary" type="submit" style="margin-top:14px">Terapkan Attack</button>
+              <button class="btn btn-primary" type="submit" style="margin-top:18px">Terapkan Attack</button>
 
               <?php if(!empty($run['attacked_image'])): ?>
                 <div class="rob-viewer" id="robViewer" style="display:block;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)">
@@ -108,8 +147,13 @@
                   <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
                     <a class="btn btn-outline btn-sm" href="<?php echo e(route('artifacts.show', ['kind' => 'attacked'])); ?>" download="attacked.png">Unduh Citra Hasil Attack</a>
                   </div>
-                  <div class="banner-info" id="nextBanner" style="display:flex;margin-top:16px">
-                    Citra hasil attack tersimpan di server. Lanjutkan ke <a href="<?php echo e(route('extraction.index')); ?>" style="color:var(--blue-dim);font-weight:600">halaman Extraction →</a> untuk mencoba mengekstraksi kembali watermark-nya.
+                  
+                  <div class="next-steps-container" id="nextBanner">
+                    <div class="next-steps-title">Pilih Langkah Selanjutnya</div>
+                    <div class="next-steps-desc">Citra hasil attack tersimpan di server. Anda bisa melakukan attack ulang dengan parameter berbeda, atau lanjut ke tahap ekstraksi.</div>
+                    <div style="display:flex;gap:12px">
+                      <a href="<?php echo e(route('extraction.index')); ?>" class="btn btn-primary btn-sm">Lanjut ke Extraction →</a>
+                    </div>
                   </div>
                 </div>
               <?php endif; ?>
@@ -127,9 +171,18 @@
 <script>
     const attackType = document.getElementById('attackType');
     const atkNode = document.getElementById('atkNode');
+    const attackCardGrid = document.getElementById('attackCardGrid');
+
     if (attackType) {
         const updateParameters = () => {
             const selected = attackType.value;
+            
+            if (attackCardGrid) {
+                attackCardGrid.querySelectorAll('.attack-card-option').forEach(card => {
+                    card.classList.toggle('selected', card.dataset.val === selected);
+                });
+            }
+
             document.querySelectorAll('.attack-param').forEach(field => {
                 const activeTypes = field.dataset.attack.split(',');
                 const active = activeTypes.includes(selected);
@@ -148,6 +201,16 @@
                 atkNode.textContent = labels[selected] || 'Parameter Attack';
             }
         };
+
+        if (attackCardGrid) {
+            attackCardGrid.querySelectorAll('.attack-card-option').forEach(card => {
+                card.addEventListener('click', () => {
+                    attackType.value = card.dataset.val;
+                    attackType.dispatchEvent(new Event('change'));
+                });
+            });
+        }
+
         attackType.addEventListener('change', updateParameters);
         updateParameters();
     }

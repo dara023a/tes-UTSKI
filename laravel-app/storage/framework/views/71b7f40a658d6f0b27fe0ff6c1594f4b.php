@@ -32,47 +32,90 @@
             </div>
             <input type="file" name="original_image" id="fileInput" accept="image/*" style="display:none" required>
 
-            <div class="field">
-              <label>Watermark (Citra Watermark)</label>
-              <input type="file" name="watermark_image" accept="image/*" required>
-            </div>
-
-            <div class="field">
-              <label>Secret Key</label>
-              <input type="password" name="secret_key" id="wmKey" placeholder="Kunci rahasia" autocomplete="new-password" required>
-            </div>
-
-            <div class="field">
-              <label>Alpha (Kekuatan Watermark)</label>
-              <input type="number" name="alpha" step="any" min="0" value="<?php echo e(old('alpha', config('watermark.default_params.alpha'))); ?>" placeholder="cth: 0.1 atau 5" required>
-              <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Masukkan nilai alpha yang ditentukan untuk eksperimen.</small>
-            </div>
-
-            <div class="field">
-              <label>Redundancy</label>
-              <input type="number" name="redundancy" min="1" value="<?php echo e(old('redundancy', config('watermark.default_params.redundancy'))); ?>">
-              <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Default engine: 3.</small>
-            </div>
-
-            <div class="field">
-              <label>Threshold Binarisasi</label>
-              <input type="number" name="threshold" min="0" max="255" value="<?php echo e(old('threshold', 127)); ?>">
-              <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Default engine: 127.</small>
-            </div>
-
-            <label class="field" style="display:flex;align-items:center;gap:10px;padding-top:8px;">
-              <input type="checkbox" name="preserve_color" value="1" <?php echo e(old('preserve_color') ? 'checked' : ''); ?>>
-              <span style="font-size:13.5px">Preserve color (proses luminance Y)</span>
-            </label>
-
-            <div class="meta" id="metaBox" style="display:none">
+            <!-- 1. Metabox dipindahkan ke bawah drop zone gambar -->
+            <div class="meta" id="metaBox" style="display:none; margin-top:14px; padding:12px; border:1px solid var(--line); border-radius:4px; background:#f8fafc;">
+              <div style="grid-column: span 2; font-weight:600; font-size:11.5px; color:var(--slate); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">Detail Citra Input</div>
               <div><span class="k">DIMENSI</span><span class="v" id="mDim">—</span></div>
               <div><span class="k">FORMAT</span><span class="v" id="mFmt">—</span></div>
               <div><span class="k">UKURAN FILE</span><span class="v" id="mSize">—</span></div>
               <div><span class="k">BLOK 8×8</span><span class="v" id="mBlocks">—</span></div>
             </div>
 
-            <button class="btn btn-dark" style="margin-top:18px;width:100%" type="submit" id="processBtn">Proses Embedding</button>
+            <div class="field" style="margin-top:16px">
+              <label>Watermark (Citra Watermark)</label>
+              <input type="file" name="watermark_image" accept="image/*" required>
+            </div>
+
+            <!-- 4. Secret Key dengan ikon mata toggle password & Tooltip -->
+            <div class="field">
+              <div class="label-with-tooltip">
+                <label for="wmKey" style="margin-bottom:0">Secret Key</label>
+                <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Secret Key">?
+                  <div class="tooltip-content">Secret key: kunci untuk menentukan blok mana yang dipakai menanam bit. Key yang sama wajib dipakai saat extraction, kalau berbeda watermark akan gagal terbaca.</div>
+                </div>
+              </div>
+              <div class="input-password-wrapper" style="margin-top:6px">
+                <input type="password" name="secret_key" id="wmKey" placeholder="Kunci rahasia" autocomplete="new-password" required>
+                <button type="button" class="toggle-password-btn" title="Tampilkan/Sembunyikan Key" onclick="togglePasswordVisibility('wmKey', this)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Alpha dengan Tooltip -->
+            <div class="field">
+              <div class="label-with-tooltip">
+                <label style="margin-bottom:0">Alpha (α) — Kekuatan Watermark</label>
+                <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Alpha">?
+                  <div class="tooltip-content">Alpha (α): margin pemisah antara dua koefisien DCT. Makin besar, watermark makin tahan serangan tapi kualitas gambar (PSNR) makin turun.</div>
+                </div>
+              </div>
+              <input type="number" name="alpha" step="any" min="0" value="<?php echo e(old('alpha', config('watermark.default_params.alpha'))); ?>" placeholder="cth: 0.1 atau 5" style="margin-top:6px" required>
+              <small style="color:var(--slate);font-size:12px;display:block;margin-top:4px">Masukkan nilai alpha yang ditentukan untuk eksperimen.</small>
+            </div>
+
+            <!-- 2. Redundancy (rentang 3-15) dengan Tooltip -->
+            <div class="field">
+              <div class="label-with-tooltip">
+                <label style="margin-bottom:0">Redundancy (Rentang 3–15)</label>
+                <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Redundancy">?
+                  <div class="tooltip-content">Redundancy: berapa kali tiap bit watermark ditanam (minimal 3). Makin tinggi, makin tahan serangan, tapi kapasitas gambar yang dibutuhkan makin besar.</div>
+                </div>
+              </div>
+              <input type="number" name="redundancy" min="3" max="15" value="<?php echo e(old('redundancy', config('watermark.default_params.redundancy'))); ?>" style="margin-top:6px">
+              <small style="color:var(--slate);font-size:12px;display:block;margin-top:4px">Default engine: 3 (rentang 3-15).</small>
+            </div>
+
+            <!-- 2. Threshold Binarisasi (0-255) dengan Tooltip -->
+            <div class="field">
+              <div class="label-with-tooltip">
+                <label style="margin-bottom:0">Threshold Binarisasi (0–255)</label>
+                <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Threshold Binarisasi">?
+                  <div class="tooltip-content">Threshold binarisasi: batas nilai piksel (0-255) untuk mengubah logo watermark menjadi hitam-putih sebelum ditanam.</div>
+                </div>
+              </div>
+              <input type="number" name="threshold" min="0" max="255" value="<?php echo e(old('threshold', 127)); ?>" style="margin-top:6px">
+              <small style="color:var(--slate);font-size:12px;display:block;margin-top:4px">Default engine: 127 (rentang 0-255).</small>
+            </div>
+
+            <!-- 3. Preserve Color Switch Card dengan Tooltip -->
+            <div class="toggle-card">
+              <div class="toggle-info">
+                <div class="toggle-title">
+                  <span>Preserve Color</span>
+                  <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Preserve Color">?
+                    <div class="tooltip-content">Preserve color: jika dicentang, watermark ditanam di kanal luminansi saja sehingga warna asli gambar tetap dipertahankan.</div>
+                  </div>
+                </div>
+                <span class="toggle-desc">Proses pada kanal luminansi Y (mempertahankan warna asli citra)</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" name="preserve_color" id="preserveColor" value="1" <?php echo e(old('preserve_color') ? 'checked' : ''); ?>>
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <button class="btn btn-dark" style="margin-top:20px;width:100%" type="submit" id="processBtn">Proses Embedding</button>
           </div>
 
           <div class="wscol">
@@ -84,12 +127,32 @@
               <div class="stage" data-s="5">Menghitung PSNR &amp; SSIM</div>
             </div>
 
+            <!-- 6. Banner pilihan lanjut ke tahap berikutnya -->
             <?php if($hasRun): ?>
-              <div class="banner-info" id="nextBanner" style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
-                <div>Citra ter-watermark tersimpan privat di server. Anda bisa melakukan embedding ulang dengan parameter berbeda, atau lanjut ke tahap berikutnya.</div>
-                <div style="display:flex;gap:12px">
-                  <a href="<?php echo e(route('attack.index')); ?>" class="btn btn-primary btn-sm">Lanjut ke Attack →</a>
-                  <a href="<?php echo e(route('extraction.index')); ?>" class="btn btn-outline btn-sm">Langsung ke Extraction →</a>
+              <div class="next-steps-container" id="nextBanner">
+                <div class="next-steps-title">Pilih Langkah Selanjutnya</div>
+                <div class="next-steps-desc">Citra ter-watermark tersimpan privat di server. Anda dapat menguji ketahanan citra dengan serangan atau langsung mengekstraksi watermark.</div>
+                <div class="next-steps-grid">
+                  <a href="<?php echo e(route('attack.index')); ?>" class="next-step-card primary">
+                    <div>
+                      <div class="card-head">
+                        <span class="badge">TAHAP 02</span>
+                        <h4>Uji Ketahanan (Attack)</h4>
+                      </div>
+                      <p>Simulasikan kompresi JPEG, resize, cropping, noise, brightness/contrast pada citra.</p>
+                    </div>
+                    <div class="action-link">Lanjut ke Attack →</div>
+                  </a>
+                  <a href="<?php echo e(route('extraction.index')); ?>" class="next-step-card">
+                    <div>
+                      <div class="card-head">
+                        <span class="badge">TAHAP 03</span>
+                        <h4>Ekstraksi Langsung</h4>
+                      </div>
+                      <p>Langsung verifikasi &amp; pulihkan watermark dari citra tanpa melakukan attack.</p>
+                    </div>
+                    <div class="action-link">Langsung ke Extraction →</div>
+                  </a>
                 </div>
               </div>
             <?php endif; ?>

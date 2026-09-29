@@ -9,7 +9,8 @@
   <div class="wrap">
     <div class="breadcrumb"><a href="{{ route('index') }}">Beranda</a> / Evaluation</div>
     <h1>Hasil pengujian robustness</h1>
-    <p class="lead">NC dan BER mengukur pemulihan watermark setelah attack. PSNR dan SSIM mengukur imperceptibility citra watermarked sebelum attack; hasil berasal dari fungsi metrik Python.</p>
+    <p class="lead">NC dan BER mengukur pemulihan watermark setelah attack. PSNR dan SSIM mengukur imperceptibility
+      citra watermarked sebelum attack; hasil berasal dari fungsi metrik Python.</p>
     <div class="stepnav">
       <a href="{{ route('embedding.index') }}">01 Embedding</a><span class="arrow">→</span>
       <a href="{{ route('attack.index') }}">02 Attack</a><span class="arrow">→</span>
@@ -22,92 +23,282 @@
 <section style="padding-top:56px">
   <div class="wrap">
 
-    <div class="banner-info" style="margin-bottom:28px">
-      Data pada halaman ini dihitung secara presisi oleh engine pemrosesan citra Python. Hasil evaluasi mencakup nilai kualitas visual (<strong>PSNR, SSIM</strong>) dan ketahanan watermark (<strong>NC, BER</strong>) dari pengujian dalam sesi ini.
+    <!-- 9. Info banner yang lebih informatif & rapi -->
+    <div class="banner-info"
+      style="margin-bottom:32px; padding:18px 22px; background:#f0f7ff; border:1px solid #cce3ff; border-radius:6px; color:var(--navy)">
+      <div style="display:flex; gap:14px; align-items:flex-start">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          style="color:var(--blue); flex-shrink:0; margin-top:2px">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4M12 8h.01" />
+        </svg>
+        <div>
+          <h4 style="font-size:15px; margin-bottom:6px; color:var(--navy)">Metrik Evaluasi Watermarking (Engine Python)
+          </h4>
+          <p style="font-size:13.5px; color:var(--slate); line-height:1.5">
+            Setiap pengujian dihitung secara presisi oleh engine pemrosesan citra Python:
+            <br>
+            • <strong>Imperceptibility (PSNR &amp; SSIM)</strong>: Kualitas visual citra ter-watermark dibanding citra
+            asli.
+            <br>
+            • <strong>Robustness (NC &amp; BER)</strong>: Keberhasilan dan keakuratan watermark yang diekstraksi setelah
+            citra diserang.
+          </p>
+        </div>
+      </div>
     </div>
 
-    @if (!$rows)
-      <div class="empty-state" id="emptyState">
-        Belum ada hasil evaluasi dalam sesi ini. Jalankan
-        <a href="{{ route('embedding.index') }}">Embedding</a> → 
-        <a href="{{ route('attack.index') }}">Attack</a> → 
-        <a href="{{ route('extraction.index') }}">Extraction</a> terlebih dahulu.
+    <!-- 9. Tampilan pesan rapi bila belum ada hasil sama sekali di sesi ini -->
+    @if (!$rows || count($rows) === 0)
+      <div class="empty-state" id="emptyState"
+        style="border:2px dashed var(--line); border-radius:8px; padding:48px 24px; text-align:center; background:#fff">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+          style="color:var(--slate); margin-bottom:12px">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M9 21V9" />
+        </svg>
+        <h3 style="font-size:18px; color:var(--navy); margin-bottom:8px">Belum Ada Hasil Evaluasi Dalam Sesi Ini</h3>
+        <p style="font-size:14px; color:var(--slate); max-width:520px; margin:0 auto 24px; line-height:1.5">
+          Jalankan alur pengujian lengkap mulai dari menyisipkan watermark, menguji serangan (attack), hingga
+          mengekstraksi watermark untuk melihat grafik dan tabel evaluasi.
+        </p>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap">
+          <a href="{{ route('embedding.index') }}" class="btn btn-primary btn-sm">01 Embedding →</a>
+          <a href="{{ route('attack.index') }}" class="btn btn-outline btn-sm">02 Attack →</a>
+          <a href="{{ route('extraction.index') }}" class="btn btn-outline btn-sm">03 Extraction →</a>
+        </div>
       </div>
     @else
-      <div class="table-toolbar" id="tableToolbar" style="display:flex">
-        <span class="mono" style="font-size:12.5px;color:var(--slate)">Tabel Hasil Ekstraksi &amp; Evaluasi</span>
+
+    <!-- 10. Grafik NC, BER, PSNR, SSIM -->
+    <div style="margin-bottom:36px">
+      <div class="shead" style="margin-bottom:20px">
+        <span class="tag">Visualisasi Grafik</span>
+        <h2 style="font-size:22px">Grafik Performansi Watermarking</h2>
+        <p>Grafik diambil langsung dari data sesi pengujian aktif.</p>
       </div>
 
-      <div class="table-wrap" id="tableWrap" style="display:block">
-        <table class="evaltable">
-          <thead>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px" class="chart-grid">
+        <!-- Grafik 1: Robustness (NC & BER) -->
+        <div class="chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+            <h3>Ketahanan Watermark (NC &amp; BER)</h3>
+            <span class="mono" style="font-size:11px; color:var(--slate)">NC ↑ (Tinggi) | BER ↓ (Rendah)</span>
+          </div>
+          <div style="position:relative; height:260px; width:100%">
+            <canvas id="robustnessChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Grafik 2: Imperceptibility (PSNR & SSIM) -->
+        <div class="chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+            <h3>Kualitas Visual (PSNR &amp; SSIM)</h3>
+            <span class="mono" style="font-size:11px; color:var(--slate)">PSNR (dB) &amp; SSIM (0–1)</span>
+          </div>
+          <div style="position:relative; height:260px; width:100%">
+            <canvas id="imperceptibilityChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabel Hasil -->
+    <div class="table-toolbar" id="tableToolbar" style="display:flex">
+      <span class="mono" style="font-size:12.5px; color:var(--slate); font-weight:600">Tabel Hasil Ekstraksi &amp;
+        Evaluasi ({{ count($rows) }} Pengujian)</span>
+    </div>
+
+    <div class="table-wrap" id="tableWrap" style="display:block">
+      <table class="evaltable">
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Attack</th>
+            <th>Parameter</th>
+            <th>PSNR</th>
+            <th>SSIM</th>
+            <th>NC</th>
+            <th>BER</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="evalBody">
+          @foreach ($rows as $row)
             <tr>
-              <th>Waktu</th>
-              <th>Attack</th>
-              <th>Parameter</th>
-              <th>PSNR</th>
-              <th>SSIM</th>
-              <th>NC</th>
-              <th>BER</th>
-              <th>Status</th>
+              <td>{{ \Illuminate\Support\Carbon::parse($row['created_at'])->format('d M Y H:i:s') }}</td>
+              <td>{{ strtoupper(str_replace('_', ' ', $row['attack_type'])) }}</td>
+              <td>{{ $row['parameter'] }}</td>
+              <td>{{ $row['psnr'] === 'inf' ? '∞' : number_format((float) $row['psnr'], 2) . ' dB' }}</td>
+              <td>{{ number_format((float) $row['ssim'], 4) }}</td>
+              <td>{{ number_format((float) $row['ncc'], 4) }}</td>
+              <td>{{ number_format((float) $row['ber'] * 100, 2) }}%</td>
+              <td>
+                <span class="status-pill {{ $row['status_class'] ?? 'err' }}">
+                  {{ $row['status'] ?? 'Gagal' }}
+                </span>
+              </td>
             </tr>
-          </thead>
-          <tbody id="evalBody">
-            @foreach ($rows as $row)
-              <tr>
-                <td>{{ \Illuminate\Support\Carbon::parse($row['created_at'])->format('d M Y H:i:s') }}</td>
-                <td>{{ strtoupper(str_replace('_', ' ', $row['attack_type'])) }}</td>
-                <td>{{ $row['parameter'] }}</td>
-                <td>{{ $row['psnr'] === 'inf' ? '∞' : number_format((float) $row['psnr'], 2) . ' dB' }}</td>
-                <td>{{ number_format((float) $row['ssim'], 4) }}</td>
-                <td>{{ number_format((float) $row['ncc'], 4) }}</td>
-                <td>{{ number_format((float) $row['ber'] * 100, 2) }}%</td>
-                <td>
-                  <span class="status-pill {{ $row['status_class'] ?? 'err' }}">
-                    {{ $row['status'] ?? 'Gagal' }}
-                  </span>
-                </td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
-      </div>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
 
-      @php($latest = end($rows))
-      <div class="shead" style="margin:42px 0 20px">
-        <span class="tag">Imperceptibility &amp; Robustness</span>
-        <h2 style="font-size:22px">Ringkasan Metrik Pengujian Terakhir</h2>
-        <p>PSNR dan SSIM dihitung dari citra asli dan citra watermarked sebelum attack. NC dan BER dihitung setelah ekstraksi watermark dari citra attacked.</p>
-      </div>
+    @php($latest = end($rows))
+    <div class="shead" style="margin:42px 0 20px">
+      <span class="tag">Imperceptibility &amp; Robustness</span>
+      <h2 style="font-size:22px">Ringkasan Metrik Pengujian Terakhir</h2>
+      <p>PSNR dan SSIM dihitung dari citra asli dan citra watermarked sebelum attack. NC dan BER dihitung setelah
+        ekstraksi watermark dari citra attacked.</p>
+    </div>
 
-      <div class="metricrow">
-        <div class="metric">
-          <div class="num">{{ $latest['psnr'] === 'inf' ? '∞' : number_format((float) $latest['psnr'], 2) }}</div>
-          <div class="lbl2">PSNR (dB)</div>
-        </div>
-        <div class="metric">
-          <div class="num">{{ number_format((float) $latest['ssim'], 4) }}</div>
-          <div class="lbl2">SSIM</div>
-        </div>
-        <div class="metric">
-          <div class="num">{{ number_format((float) $latest['ncc'], 4) }}</div>
-          <div class="lbl2">NC</div>
-        </div>
-        <div class="metric">
-          <div class="num">{{ number_format((float) $latest['ber'] * 100, 2) }}%</div>
-          <div class="lbl2">BER</div>
-        </div>
+    <div class="metricrow">
+      <div class="metric">
+        <div class="num">{{ $latest['psnr'] === 'inf' ? '∞' : number_format((float) $latest['psnr'], 2) }}</div>
+        <div class="lbl2">PSNR (dB)</div>
       </div>
+      <div class="metric">
+        <div class="num">{{ number_format((float) $latest['ssim'], 4) }}</div>
+        <div class="lbl2">SSIM</div>
+      </div>
+      <div class="metric">
+        <div class="num">{{ number_format((float) $latest['ncc'], 4) }}</div>
+        <div class="lbl2">NC</div>
+      </div>
+      <div class="metric">
+        <div class="num">{{ number_format((float) $latest['ber'] * 100, 2) }}%</div>
+        <div class="lbl2">BER</div>
+      </div>
+    </div>
 
-      @if ($run && !empty($run['extracted_image']))
-        <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
-          <a class="btn btn-outline btn-sm" href="{{ route('artifacts.show', ['kind' => 'attacked']) }}" download="attacked.png">Unduh Attacked Image</a>
-          <a class="btn btn-outline btn-sm" href="{{ route('artifacts.show', ['kind' => 'extracted']) }}" download="extracted-watermark.png">Unduh Extracted Watermark</a>
-          <a class="btn btn-primary btn-sm" href="{{ route('attack.index') }}">Uji Attack Lain</a>
-        </div>
-      @endif
+    @if ($run && !empty($run['extracted_image']))
+      <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
+        <a class="btn btn-outline btn-sm" href="{{ route('artifacts.show', ['kind' => 'attacked']) }}"
+          download="attacked.png">Unduh Attacked Image</a>
+        <a class="btn btn-outline btn-sm" href="{{ route('artifacts.show', ['kind' => 'extracted']) }}"
+          download="extracted-watermark.png">Unduh Extracted Watermark</a>
+        <a class="btn btn-primary btn-sm" href="{{ route('attack.index') }}">Uji Attack Lain</a>
+      </div>
+    @endif
     @endif
 
   </div>
 </section>
 @endsection
+
+@push('scripts')
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const rows = @json($rows);
+      if (!rows || rows.length === 0) return;
+
+      const labels = rows.map((r, i) => `${r.attack_type.toUpperCase().replace('_', ' ')} (${r.parameter})`);
+      const ncValues = rows.map(r => parseFloat(r.ncc) || 0);
+      const berValues = rows.map(r => (parseFloat(r.ber) * 100) || 0);
+      const psnrValues = rows.map(r => r.psnr === 'inf' ? 60 : (parseFloat(r.psnr) || 0));
+      const ssimValues = rows.map(r => parseFloat(r.ssim) || 0);
+
+      // Chart 1: Robustness (NC & BER)
+      const ctxRob = document.getElementById('robustnessChart');
+      if (ctxRob) {
+        new Chart(ctxRob, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'NC (Normalized Correlation)',
+                data: ncValues,
+                backgroundColor: 'rgba(47, 111, 239, 0.85)',
+                borderColor: '#2F6FEF',
+                borderWidth: 1,
+                yAxisID: 'yNC'
+              },
+              {
+                label: 'BER (%)',
+                data: berValues,
+                backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                borderColor: '#ef4444',
+                borderWidth: 1,
+                yAxisID: 'yBER'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              yNC: {
+                type: 'linear',
+                position: 'left',
+                min: 0,
+                max: 1.0,
+                title: { display: true, text: 'NC Score (0 - 1.0)' }
+              },
+              yBER: {
+                type: 'linear',
+                position: 'right',
+                min: 0,
+                max: 100,
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'BER (%)' }
+              }
+            }
+          }
+        });
+      }
+
+      // Chart 2: Imperceptibility (PSNR & SSIM)
+      const ctxImp = document.getElementById('imperceptibilityChart');
+      if (ctxImp) {
+        new Chart(ctxImp, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'PSNR (dB)',
+                data: psnrValues,
+                borderColor: '#1E7A55',
+                backgroundColor: 'rgba(30, 122, 85, 0.15)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'yPSNR'
+              },
+              {
+                label: 'SSIM',
+                data: ssimValues,
+                borderColor: '#8B5CF6',
+                backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                borderWidth: 2,
+                tension: 0.3,
+                yAxisID: 'ySSIM'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              yPSNR: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'PSNR (dB)' }
+              },
+              ySSIM: {
+                type: 'linear',
+                position: 'right',
+                min: 0,
+                max: 1.0,
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: 'SSIM (0 - 1.0)' }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
+@endpush

@@ -1,1 +1,1 @@
-{"ok": true, "watermarked_image_path": "D:\\spectra-watermark-ui\\laravel-app\\storage\\app/private/watermark-runs/1fc12aa3-2096-41aa-b047-51d0f726a1c4\\outputs\\watermarked.png", "metadata_path": "D:\\spectra-watermark-ui\\laravel-app\\storage\\app/private/watermark-runs/1fc12aa3-2096-41aa-b047-51d0f726a1c4\\outputs\\metadata.json", "processed_image_size": [1024, 1536]}
+{"ok": true, "metrics": {"psnr": 33.31792624255626, "ssim": 0.8266468565542359, "ncc": 0.1800275495823005, "ber": 0.567138671875}, "attack_type": "brightness_contrast", "parameter": "alpha=1.8, beta=5"}

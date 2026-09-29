@@ -43,21 +43,48 @@
 
           <form method="POST" action="{{ route('extraction.run') }}">
             @csrf
+            <!-- 4. Secret Key dengan ikon mata toggle password & Tooltip -->
             <div class="field" style="margin-top:16px">
-              <label>Secret Key</label>
-              <input type="password" name="secret_key" id="vKey" placeholder="Kunci rahasia" autocomplete="new-password" required>
+              <div class="label-with-tooltip">
+                <label for="vKey" style="margin-bottom:0">Secret Key</label>
+                <div class="tooltip-trigger" tabindex="0" aria-label="Penjelasan Secret Key">?
+                  <div class="tooltip-content">Secret key: kunci untuk menentukan blok mana yang dipakai menanam bit. Key yang sama wajib dipakai saat extraction, kalau berbeda watermark akan gagal terbaca.</div>
+                </div>
+              </div>
+              <div class="input-password-wrapper" style="margin-top:6px">
+                <input type="password" name="secret_key" id="vKey" placeholder="Kunci rahasia" autocomplete="new-password" required>
+                <button type="button" class="toggle-password-btn" title="Tampilkan/Sembunyikan Key" onclick="togglePasswordVisibility('vKey', this)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
             </div>
 
-            <div class="field">
-              <label>Strategi bila ukuran citra berubah</label>
-              <select name="on_size_mismatch" required>
-                <option value="raise" {{ old('on_size_mismatch', $defaultMismatch) === 'raise' ? 'selected' : '' }}>raise — tanpa sinkronisasi ukuran</option>
-                <option value="resize" {{ old('on_size_mismatch', $defaultMismatch) === 'resize' ? 'selected' : '' }}>resize — untuk resize murni</option>
-                <option value="centered_crop" {{ old('on_size_mismatch', $defaultMismatch) === 'centered_crop' ? 'selected' : '' }}>centered_crop — mengasumsikan crop simetris</option>
-              </select>
+            <!-- 8. Field on_size_mismatch: radio cards dengan 3 opsi jelas dan deskripsi -->
+            <div class="field" style="margin-top:20px">
+              <label style="margin-bottom:8px">Strategi Bila Ukuran Citra Berubah (on_size_mismatch)</label>
+              
+              <div class="mismatch-cards-grid" id="mismatchCardGrid">
+                <label class="mismatch-card-option {{ old('on_size_mismatch', $defaultMismatch) === 'raise' ? 'selected' : '' }}">
+                  <input type="radio" name="on_size_mismatch" value="raise" {{ old('on_size_mismatch', $defaultMismatch) === 'raise' ? 'checked' : '' }} required>
+                  <div class="mismatch-title">Tolak (raise)</div>
+                  <div class="mismatch-desc">Tolak proses bila dimensi citra berubah (tanpa resample / sinkronisasi ukuran).</div>
+                </label>
+
+                <label class="mismatch-card-option {{ old('on_size_mismatch', $defaultMismatch) === 'resize' ? 'selected' : '' }}">
+                  <input type="radio" name="on_size_mismatch" value="resize" {{ old('on_size_mismatch', $defaultMismatch) === 'resize' ? 'checked' : '' }}>
+                  <div class="mismatch-title">Sesuaikan ukuran (resize)</div>
+                  <div class="mismatch-desc">Ubah ukuran citra ke dimensi semula sebelum ekstraksi (cocok untuk attack resize murni).</div>
+                </label>
+
+                <label class="mismatch-card-option {{ old('on_size_mismatch', $defaultMismatch) === 'centered_crop' ? 'selected' : '' }}">
+                  <input type="radio" name="on_size_mismatch" value="centered_crop" {{ old('on_size_mismatch', $defaultMismatch) === 'centered_crop' ? 'checked' : '' }}>
+                  <div class="mismatch-title">Potong di tengah (centered crop)</div>
+                  <div class="mismatch-desc">Mengasumsikan crop simetris di tengah citra (cocok bila redundancy &gt; 1).</div>
+                </label>
+              </div>
             </div>
 
-            <button class="btn btn-dark" style="margin-top:18px;width:100%" id="verifyBtn" type="submit" {{ (!$run || empty($run['attacked_image'])) ? 'disabled' : '' }}>Ekstrak Watermark</button>
+            <button class="btn btn-dark" style="margin-top:22px;width:100%" id="verifyBtn" type="submit" {{ (!$run || empty($run['attacked_image'])) ? 'disabled' : '' }}>Ekstrak Watermark</button>
           </form>
         </div>
 
@@ -85,8 +112,9 @@
                 </div>
               @endif
 
-              <div class="banner-info" id="nextBanner" style="margin-top:18px;display:flex;flex-direction:column;gap:12px;">
-                <div>Tersimpan. Anda bisa melakukan ekstraksi ulang, atau melihat rangkuman hasil pengujian.</div>
+              <div class="next-steps-container" id="nextBanner">
+                <div class="next-steps-title">Pilih Langkah Selanjutnya</div>
+                <div class="next-steps-desc">Hasil ekstraksi tersimpan. Anda bisa melakukan ekstraksi ulang dengan strategi mismatch berbeda, atau melihat grafik &amp; rangkuman evaluasi.</div>
                 <div style="display:flex;gap:12px">
                   <a href="{{ route('evaluation.index') }}" class="btn btn-primary btn-sm">Lanjut ke Evaluation →</a>
                 </div>
@@ -99,3 +127,16 @@
   </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+    document.querySelectorAll('#mismatchCardGrid input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('#mismatchCardGrid .mismatch-card-option').forEach(card => {
+                card.classList.toggle('selected', card.querySelector('input').checked);
+            });
+        });
+    });
+</script>
+@endpush
+
