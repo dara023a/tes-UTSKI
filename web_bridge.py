@@ -85,6 +85,19 @@ def attack(payload: dict[str, Any]) -> dict[str, Any]:
     elif attack_type == "crop_resize_back":
         parameter = float(_required(payload, "crop_percent"))
         attacked = attack_crop_resize_back(image, float(parameter))
+    elif attack_type == "gaussian_noise":
+        sigma = float(_required(payload, "sigma"))
+        seed_param = payload.get("seed")
+        seed = int(seed_param) if seed_param else None
+        parameter = f"sigma={sigma}, seed={seed}"
+        from attack_simulation import attack_gaussian_noise
+        attacked = attack_gaussian_noise(image, sigma, seed)
+    elif attack_type == "brightness_contrast":
+        alpha_bc = float(_required(payload, "brightness_alpha"))
+        beta_bc = float(_required(payload, "brightness_beta"))
+        parameter = f"alpha={alpha_bc}, beta={beta_bc}"
+        from attack_simulation import attack_brightness_contrast
+        attacked = attack_brightness_contrast(image, alpha_bc, beta_bc)
     else:
         raise BridgeInputError("Jenis attack tidak didukung.")
 

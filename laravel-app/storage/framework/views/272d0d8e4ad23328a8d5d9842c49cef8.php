@@ -61,8 +61,8 @@
                 <td><?php echo e(number_format((float) $row['ncc'], 4)); ?></td>
                 <td><?php echo e(number_format((float) $row['ber'] * 100, 2)); ?>%</td>
                 <td>
-                  <span class="status-pill <?php echo e(((float)$row['ncc'] >= 0.75) ? 'ok' : (((float)$row['ncc'] >= 0.5) ? 'warn' : 'err')); ?>">
-                    <?php echo e(((float)$row['ncc'] >= 0.75) ? 'Terdeteksi' : (((float)$row['ncc'] >= 0.5) ? 'Melemah' : 'Gagal')); ?>
+                  <span class="status-pill <?php echo e($row['status_class'] ?? 'err'); ?>">
+                    <?php echo e($row['status'] ?? 'Gagal'); ?>
 
                   </span>
                 </td>

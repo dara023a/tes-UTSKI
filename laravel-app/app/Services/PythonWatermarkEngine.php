@@ -29,7 +29,7 @@ final class PythonWatermarkEngine
             'PYTHONIOENCODING' => 'utf-8',
         ]);
         $process->setInput(json_encode($payload, JSON_THROW_ON_ERROR));
-        $process->setTimeout(180);
+        $process->setTimeout(60);
         $process->run();
 
         $decoded = json_decode($process->getOutput(), true);
@@ -47,6 +47,9 @@ final class PythonWatermarkEngine
             );
         }
         if (! $process->isSuccessful()) {
+            if ($process->isTimedOut()) {
+                throw new RuntimeException('Python engine timeout (lebih dari 60 detik).');
+            }
             throw new RuntimeException('Python engine tidak dapat menyelesaikan proses.');
         }
 

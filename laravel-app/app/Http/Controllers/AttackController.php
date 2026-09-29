@@ -33,15 +33,21 @@ final class AttackController extends Controller
         }
 
         $validated = $request->validate([
-            'attack_type' => ['required', 'in:jpeg,resize,pure_crop,crop_resize_back'],
+            'attack_type' => ['required', 'in:jpeg,resize,pure_crop,crop_resize_back,gaussian_noise,brightness_contrast'],
             'quality' => ['required_if:attack_type,jpeg', 'nullable', 'integer', 'min:1', 'max:100'],
             'scale' => ['required_if:attack_type,resize', 'nullable', 'numeric', 'gt:0'],
             'crop_percent' => ['required_if:attack_type,pure_crop,crop_resize_back', 'nullable', 'numeric', 'between:0,99.99'],
+            'sigma' => ['required_if:attack_type,gaussian_noise', 'nullable', 'numeric', 'gt:0'],
+            'seed' => ['nullable', 'integer'],
+            'brightness_alpha' => ['required_if:attack_type,brightness_contrast', 'nullable', 'numeric', 'gt:0'],
+            'brightness_beta' => ['required_if:attack_type,brightness_contrast', 'nullable', 'numeric'],
         ]);
         $attackType = $validated['attack_type'];
         $parameter = match ($attackType) {
             'jpeg' => (int) $validated['quality'],
             'resize' => (float) $validated['scale'],
+            'gaussian_noise' => 'sigma=' . $validated['sigma'] . ', seed=' . ($validated['seed'] ?? 'none'),
+            'brightness_contrast' => 'alpha=' . $validated['brightness_alpha'] . ', beta=' . $validated['brightness_beta'],
             default => (float) $validated['crop_percent'],
         };
         $attacked = 'outputs/attacked.png';
@@ -50,9 +56,13 @@ final class AttackController extends Controller
             $engine->call('attack', [
                 'image_path' => $storage->path($run['id'], $run['watermarked_image']),
                 'attack_type' => $attackType,
-                'quality' => $attackType === 'jpeg' ? $parameter : null,
-                'scale' => $attackType === 'resize' ? $parameter : null,
-                'crop_percent' => in_array($attackType, ['pure_crop', 'crop_resize_back'], true) ? $parameter : null,
+                'quality' => $attackType === 'jpeg' ? (int) $validated['quality'] : null,
+                'scale' => $attackType === 'resize' ? (float) $validated['scale'] : null,
+                'crop_percent' => in_array($attackType, ['pure_crop', 'crop_resize_back'], true) ? (float) $validated['crop_percent'] : null,
+                'sigma' => $attackType === 'gaussian_noise' ? (float) $validated['sigma'] : null,
+                'seed' => $attackType === 'gaussian_noise' && isset($validated['seed']) ? (int) $validated['seed'] : null,
+                'brightness_alpha' => $attackType === 'brightness_contrast' ? (float) $validated['brightness_alpha'] : null,
+                'brightness_beta' => $attackType === 'brightness_contrast' ? (float) $validated['brightness_beta'] : null,
                 'output_path' => $storage->path($run['id'], $attacked),
             ]);
         } catch (PythonEngineException $exception) {
@@ -67,7 +77,7 @@ final class AttackController extends Controller
         unset($run['extracted_image']);
         $request->session()->put('watermark_run', $run);
 
-        return redirect()->route('extraction.index')
+        return redirect()->route('attack.index')
             ->with('success', 'Attack selesai. Citra hasilnya siap untuk blind extraction.');
     }
 }

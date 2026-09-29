@@ -58,22 +58,43 @@
                   <option value="resize" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'resize' ? 'selected' : ''); ?>>Resize murni</option>
                   <option value="pure_crop" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'pure_crop' ? 'selected' : ''); ?>>Pure crop</option>
                   <option value="crop_resize_back" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'crop_resize_back' ? 'selected' : ''); ?>>Crop lalu resize balik</option>
+                  <option value="gaussian_noise" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'gaussian_noise' ? 'selected' : ''); ?>>Gaussian Noise</option>
+                  <option value="brightness_contrast" <?php echo e(old('attack_type', $run['attack_type'] ?? '') === 'brightness_contrast' ? 'selected' : ''); ?>>Brightness &amp; Contrast</option>
                 </select>
               </div>
 
               <div class="field attack-param" data-attack="jpeg">
                 <label>Kualitas JPEG (1–100)</label>
-                <input type="number" name="quality" min="1" max="100" value="<?php echo e(old('quality', 70)); ?>" placeholder="cth: 70">
+                <div style="display:flex;gap:12px;margin-bottom:8px">
+                  <button type="button" class="btn btn-outline btn-sm preset-btn" onclick="document.getElementById('jpegQ').value=90">Preset 90</button>
+                  <button type="button" class="btn btn-outline btn-sm preset-btn" onclick="document.getElementById('jpegQ').value=70">Preset 70</button>
+                  <button type="button" class="btn btn-outline btn-sm preset-btn" onclick="document.getElementById('jpegQ').value=50">Preset 50</button>
+                </div>
+                <input id="jpegQ" type="number" name="quality" min="1" max="100" value="<?php echo e(old('quality', ($run['attack_type'] ?? '') === 'jpeg' ? $run['parameter'] : 70)); ?>" placeholder="cth: 70">
               </div>
 
               <div class="field attack-param" data-attack="resize">
                 <label>Scale Resize (cth: 0.5 untuk 50%)</label>
-                <input type="number" name="scale" min="0" step="any" value="<?php echo e(old('scale', 0.5)); ?>" placeholder="cth: 0.5">
+                <input type="number" name="scale" min="0" step="any" value="<?php echo e(old('scale', ($run['attack_type'] ?? '') === 'resize' ? $run['parameter'] : 0.5)); ?>" placeholder="cth: 0.5">
               </div>
 
               <div class="field attack-param" data-attack="pure_crop,crop_resize_back">
                 <label>Crop dari Setiap Sisi (%)</label>
-                <input type="number" name="crop_percent" min="0" max="99.99" step="any" value="<?php echo e(old('crop_percent', 10)); ?>" placeholder="cth: 10">
+                <input type="number" name="crop_percent" min="0" max="99.99" step="any" value="<?php echo e(old('crop_percent', in_array($run['attack_type'] ?? '', ['pure_crop', 'crop_resize_back']) ? $run['parameter'] : 10)); ?>" placeholder="cth: 10">
+              </div>
+
+              <div class="field attack-param" data-attack="gaussian_noise">
+                <label>Sigma (Deviasi Standar, cth: 10)</label>
+                <input type="number" name="sigma" min="0" step="any" value="<?php echo e(old('sigma', 10)); ?>">
+                <label style="margin-top:12px">Seed (Opsional)</label>
+                <input type="number" name="seed" value="<?php echo e(old('seed')); ?>" placeholder="Kosongkan untuk acak">
+              </div>
+
+              <div class="field attack-param" data-attack="brightness_contrast">
+                <label>Contrast (Alpha, cth: 1.2)</label>
+                <input type="number" name="brightness_alpha" step="any" value="<?php echo e(old('brightness_alpha', 1.0)); ?>">
+                <label style="margin-top:12px">Brightness (Beta, cth: 30)</label>
+                <input type="number" name="brightness_beta" step="any" value="<?php echo e(old('brightness_beta', 0)); ?>">
               </div>
 
               <button class="btn btn-primary" type="submit" style="margin-top:14px">Terapkan Attack</button>
@@ -120,7 +141,9 @@
                     jpeg: 'JPEG Compression',
                     resize: 'Resize Murni',
                     pure_crop: 'Pure Crop',
-                    crop_resize_back: 'Crop lalu Resize Balik'
+                    crop_resize_back: 'Crop lalu Resize Balik',
+                    gaussian_noise: 'Gaussian Noise',
+                    brightness_contrast: 'Brightness & Contrast'
                 };
                 atkNode.textContent = labels[selected] || 'Parameter Attack';
             }

@@ -32,45 +32,30 @@ yang sebenarnya dipakai di proyek ini (default 255.0 untuk grayscale
 8-bit). SSIM dua gambar identik = 1.0 (dijamin oleh definisi metrik
 itu sendiri, bukan dihitung manual di sini).
 
-### NCC / NC (Normalized Cross-Correlation)
-Mengikuti definisi resmi pada dokumen algoritma proyek (3.3.4), formula
-yang dipakai adalah normalized correlation TANPA pengurangan mean
-(bukan Pearson correlation):
+### NCC / NC (Normalized Cross-Correlation — Zero-Mean / Pearson)
+Mengikuti definisi Pearson normalized correlation:
 
-    NC = sum(A * B) / sqrt( sum(A^2) * sum(B^2) )
+    NC = sum((A-mean(A)) * (B-mean(B))) / sqrt( sum((A-mean(A))^2) * sum((B-mean(B))^2) )
 
-di mana A = original watermark (flatten, {0,1}), B = extracted
-watermark (flatten, {0,1}). Ini adalah formula NC klasik ala Cox et al.
-yang umum dipakai di literatur watermarking untuk mengukur kemiripan
-watermark hasil ekstraksi terhadap watermark asli.
+di mana A = original watermark (flatten, float), B = extracted watermark
+(flatten, float). Formula ini MENGURANGI mean sebelum perkalian (zero-mean),
+sehingga hasil NC tidak bergantung pada komposisi bit watermark (logo
+timpang ~5% bit-1 vs checkerboard 50:50 keduanya menghasilkan baseline NC
+≈ 0 untuk output acak).
 
-Konsekuensi memakai formula ini pada data biner {0,1} (bukan bipolar
-{-1,+1}): karena A dan B tidak pernah negatif, sum(A*B) tidak pernah
-negatif, sehingga NC untuk watermark biner secara praktis berada di
-rentang [0, 1] -- bukan [-1, 1] seperti Pearson. Watermark yang benar
-sama persis (extraction sempurna) -> NC = 1.0. Watermark yang salah
-total (mis. karena key salah, hasil menyerupai bit acak) -> NC
-mendekati nilai kecil (bukan -1), termasuk watermark yang merupakan
-kebalikan sempurna (inverted) dari aslinya -- itu juga menghasilkan
-NC = 0.0, karena tidak ada posisi bit "1" yang tumpang tindih. Ini
-konsisten dengan definisi rumus di algoritma.md, walau tidak bisa
-membedakan "acak" dari "terbalik sempurna" seperti halnya Pearson.
+Rentang NC adalah [-1, 1]:
+- NC ≈ 1.0 : watermark terekstrak sempurna (identik dengan asli)
+- NC ≈ 0.0 : tidak ada korelasi (output acak / key salah)
+- NC < 0   : korelasi negatif (extracted adalah inversi dari asli)
 
-**Edge case sum(A^2) atau sum(B^2) == 0**: terjadi kalau salah satu
-(atau keduanya) watermark seluruhnya bernilai 0 (konstan nol), yang
-membuat pembagi (atau bahkan pembilang) di formula NC bernilai nol dan
-matematis tidak terdefinisi (0/0). Fungsi ini menangani secara eksplisit:
+**Edge case std == 0**: terjadi kalau salah satu array konstan (semua
+bernilai sama, mis. seluruhnya 0 atau seluruhnya 1), sehingga
+std-deviasi = 0 dan pembagi menjadi nol:
 
-- Jika A dan B SAMA-SAMA seluruhnya nol (sum(A^2) == 0 dan
-  sum(B^2) == 0) -> kembalikan NC = 1.0 (didefinisikan sebagai
-  kecocokan sempurna, konsisten dengan interpretasi "watermark
-  identik" -- keduanya watermark kosong yang sama).
-- Jika HANYA SALAH SATU yang seluruhnya nol (mis. A semua 0, B tidak)
-  -> pembilang sum(A*B) otomatis ikut nol sehingga rumus NC menjadi
-  0/0, secara matematis tidak terdefinisi -> kembalikan NC = 0.0 dan
-  didokumentasikan sebagai "tidak ada kecocokan terdeteksi", BUKAN
-  NaN atau error, supaya nilai tetap bisa dipakai/ditabelkan di
-  evaluasi tanpa penanganan khusus tambahan di pemanggil.
+- Jika KEDUANYA konstan DAN sama nilainya -> NC = 1.0 (identik).
+- Jika KEDUANYA konstan tapi BERBEDA nilainya -> NC = 0.0 (tidak ada
+  korelasi yang bisa dihitung).
+- Jika HANYA SALAH SATU konstan -> NC = 0.0.
 
 Tidak pernah mengembalikan NaN atau membiarkan
 `ZeroDivisionError`/`RuntimeWarning: invalid value` bocor ke pemanggil.
@@ -162,15 +147,17 @@ def calculate_ssim(
 # ---------------------------------------------------------------------------
 
 def calculate_ncc(original_watermark: np.ndarray, extracted_watermark: np.ndarray) -> float:
-    """Normalized Cross-Correlation (NC) antara original watermark dan
-    extracted watermark, sesuai definisi 3.3.4 di algoritma.md:
+    """Zero-mean Normalized Cross-Correlation (NC/Pearson) antara original
+    watermark dan extracted watermark:
 
-        NC = sum(A * B) / sqrt(sum(A^2) * sum(B^2))
+        NC = sum((A-mean(A)) * (B-mean(B))) / sqrt(
+                 sum((A-mean(A))^2) * sum((B-mean(B))^2) )
 
-    TANPA pengurangan mean (bukan Pearson correlation).
+    Formula ini tidak bergantung pada komposisi bit (logo timpang ~5% bit-1
+    maupun checkerboard 50:50 sama-sama menghasilkan NC ≈ 0 untuk output
+    acak). Rentang output: [-1, 1].
 
-    Lihat docstring modul untuk penjelasan formula lengkap dan
-    penanganan edge case pembagi nol.
+    Lihat docstring modul untuk penjelasan edge case.
     """
     _assert_same_shape(original_watermark, extracted_watermark, "calculate_ncc")
 
@@ -180,28 +167,30 @@ def calculate_ncc(original_watermark: np.ndarray, extracted_watermark: np.ndarra
     if a.size == 0:
         raise ValueError("calculate_ncc(): watermark tidak boleh kosong")
 
-    sum_a2 = np.sum(a ** 2)
-    sum_b2 = np.sum(b ** 2)
+    a_centered = a - a.mean()
+    b_centered = b - b.mean()
 
-    a_is_zero = np.isclose(sum_a2, 0.0)
-    b_is_zero = np.isclose(sum_b2, 0.0)
+    std_a = math.sqrt(np.sum(a_centered ** 2))
+    std_b = math.sqrt(np.sum(b_centered ** 2))
 
-    if a_is_zero and b_is_zero:
-        # Kedua watermark seluruhnya nol -> didefinisikan identik -> 1.0.
-        return 1.0
+    # Edge case: salah satu atau keduanya konstan (std == 0)
+    a_const = math.isclose(std_a, 0.0)
+    b_const = math.isclose(std_b, 0.0)
 
-    if a_is_zero or b_is_zero:
-        # Hanya salah satu seluruhnya nol -> numerator ikut nol -> 0/0.
-        # Didefinisikan sebagai "tidak ada kecocokan", bukan NaN.
+    if a_const and b_const:
+        # Keduanya konstan -- identik jika nilai mean sama, berbeda jika tidak
+        return 1.0 if math.isclose(a.mean(), b.mean()) else 0.0
+
+    if a_const or b_const:
+        # Salah satu konstan -- tidak ada pola yang bisa dikorelasikan
         return 0.0
 
-    numerator = np.sum(a * b)
-    denominator = math.sqrt(sum_a2 * sum_b2)
+    numerator = float(np.sum(a_centered * b_centered))
+    denominator = std_a * std_b
 
     ncc = numerator / denominator
 
-    # Guard tambahan: floating point kadang menghasilkan sedikit di luar
-    # batas Cauchy-Schwarz [-1, 1] untuk kasus identik/hampir identik.
+    # Guard floating-point agar selalu dalam [-1, 1]
     ncc = max(-1.0, min(1.0, ncc))
     return float(ncc)
 

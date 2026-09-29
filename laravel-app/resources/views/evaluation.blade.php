@@ -63,8 +63,8 @@
                 <td>{{ number_format((float) $row['ncc'], 4) }}</td>
                 <td>{{ number_format((float) $row['ber'] * 100, 2) }}%</td>
                 <td>
-                  <span class="status-pill {{ ((float)$row['ncc'] >= 0.75) ? 'ok' : (((float)$row['ncc'] >= 0.5) ? 'warn' : 'err') }}">
-                    {{ ((float)$row['ncc'] >= 0.75) ? 'Terdeteksi' : (((float)$row['ncc'] >= 0.5) ? 'Melemah' : 'Gagal') }}
+                  <span class="status-pill {{ $row['status_class'] ?? 'err' }}">
+                    {{ $row['status'] ?? 'Gagal' }}
                   </span>
                 </td>
               </tr>

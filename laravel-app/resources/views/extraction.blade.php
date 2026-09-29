@@ -85,8 +85,11 @@
                 </div>
               @endif
 
-              <div class="banner-info" id="nextBanner" style="margin-top:18px;display:flex">
-                Tersimpan. Lihat semua hasil pengujian di <a href="{{ route('evaluation.index') }}" style="color:var(--blue-dim);font-weight:600">halaman Evaluation →</a>
+              <div class="banner-info" id="nextBanner" style="margin-top:18px;display:flex;flex-direction:column;gap:12px;">
+                <div>Tersimpan. Anda bisa melakukan ekstraksi ulang, atau melihat rangkuman hasil pengujian.</div>
+                <div style="display:flex;gap:12px">
+                  <a href="{{ route('evaluation.index') }}" class="btn btn-primary btn-sm">Lanjut ke Evaluation →</a>
+                </div>
               </div>
             </div>
           @endif

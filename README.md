@@ -102,7 +102,16 @@ Buka alamat yang ditampilkan oleh Laravel, biasanya <http://127.0.0.1:8000>. Ser
    - `centered_crop`: untuk crop simetris dari tengah; redundancy lebih dari `1` disarankan agar salinan bit yang tersisa dapat membantu pemulihan.
 7. Jalankan ekstraksi. Hasil watermark dan metrik akan tersedia di **Evaluation**. PSNR/SSIM berasal dari proses embedding, sementara NC/BER menunjukkan hasil pemulihan setelah attack.
 
-Alpha, redundancy, ukuran citra, dan parameter serangan memengaruhi hasil. Karena itu, catat parameter eksperimen saat membandingkan nilai metrik.
+## Parameter Final (Produksi)
+
+Berdasarkan hasil eksperimen dan kalibrasi ekstensif, sistem dioptimalkan dengan konfigurasi final berikut:
+- **Koefisien DCT:** Memanfaatkan blok 8x8 pada pasangan koefisien mid-frequency **(4,5) & (5,4)**.
+- **Formula NC:** Menggunakan **Zero-Mean Normalized Correlation (Pearson)**. Hal ini menjamin bahwa key yang salah (salah tebak/acak) akan selalu menghasilkan nilai NC yang mendekati 0, terlepas dari berapapun komposisi rasio bit 0 dan 1 pada citra watermark.
+- **Alpha (Kekuatan Watermark):** `100` — Memberikan ketahanan kuat terhadap serangan (seperti JPEG 70 dan Crop 25%) dengan tetap mempertahankan kualitas gambar rata-rata di atas ambang 30 dB (PSNR).
+- **Redundancy (Duplikasi Bit):** `3` — Menyalin setiap bit watermark ke dalam 3 blok berbeda yang akan dipilih melalui mekanisme *majority vote* saat ekstraksi, menjamin ketahanan ekstra meskipun ada bagian citra yang hilang akibat *cropping*.
+- **Kapasitas Maksimum (Contoh):** Pada citra berukuran 1024x1536 (24.576 blok DCT) dan watermark berukuran 64x64 (4.096 bit), dengan redundancy 3, total blok yang digunakan adalah 12.288 blok (sekitar 50% dari total kapasitas citra). Ini membuktikan kapasitas yang masih sangat memadai.
+
+Alpha, redundancy, ukuran citra, dan parameter serangan memengaruhi hasil. Karena itu, pastikan untuk menyesuaikan nilai limitasi ini jika terjadi perubahan resolusi pada sumber citra yang digunakan.
 
 ## Batasan dan Catatan
 
@@ -117,8 +126,9 @@ Alpha, redundancy, ukuran citra, dan parameter serangan memengaruhi hasil. Karen
 Uji mesin Python dari direktori utama proyek:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe tests\test_phase2.py
 ```
+*(Menjalankan 5 skenario unit test termasuk happy path, salah key, limitasi kapasitas redundancy, sensitivitas attack, dan ambang batas evaluasi NC)*
 
 Uji aplikasi Laravel dari direktori `laravel-app`:
 
@@ -151,6 +161,7 @@ php artisan test
 Kalau ada error ini di localhost pas di run "php artisan server"
 - A temporary file could not be opened to write the process output: fopen(C:\WINDOWS\sf_proc_00.out.lock): Failed to open stream: Permission denied
 pakai command ini
+
 $root = 'pathfoldernya'
 New-Item -ItemType Directory -Force "$root\storage\framework\uploads" | Out-Null
 New-Item -ItemType Directory -Force "$root\storage\framework\process-tmp" | Out-Null

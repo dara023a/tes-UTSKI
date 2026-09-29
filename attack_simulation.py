@@ -161,6 +161,22 @@ def attack_pure_crop(image: np.ndarray, crop_percent: float) -> np.ndarray:
     dh, dw = int(h * crop_percent / 100 / 2), int(w * crop_percent / 100 / 2)
     return image[dh : h - dh, dw : w - dw]
 
+def attack_gaussian_noise(image: np.ndarray, sigma: float, seed: Optional[int] = None) -> np.ndarray:
+    """Menambahkan noise gaussian ke gambar."""
+    if seed is not None:
+        rng = np.random.default_rng(seed)
+    else:
+        rng = np.random.default_rng()
+    noise = rng.normal(0, sigma, image.shape)
+    attacked = image.astype(np.float64) + noise
+    return np.clip(attacked, 0, 255).astype(np.uint8)
+
+def attack_brightness_contrast(image: np.ndarray, alpha: float, beta: float) -> np.ndarray:
+    """Mengubah contrast (alpha) dan brightness (beta)."""
+    attacked = image.astype(np.float64) * alpha + beta
+    return np.clip(attacked, 0, 255).astype(np.uint8)
+
+
 
 # ---------------------------------------------------------------------------
 # Orkestrasi utama

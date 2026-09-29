@@ -27,11 +27,11 @@ final class EmbeddingController extends Controller
         WatermarkStorageService $storage,
     ): RedirectResponse {
         $validated = $request->validate([
-            'original_image' => ['required', 'file', 'image', 'max:10240'],
-            'watermark_image' => ['required', 'file', 'image', 'max:10240'],
+            'original_image' => ['required', 'file', 'image', 'max:10240', 'dimensions:max_width=4096,max_height=4096'],
+            'watermark_image' => ['required', 'file', 'image', 'max:10240', 'dimensions:max_width=4096,max_height=4096'],
             'secret_key' => ['required', 'string', 'min:1', 'max:4096'],
-            'alpha' => ['required', 'numeric', 'gt:0'],
-            'redundancy' => ['nullable', 'integer', 'min:1'],
+            'alpha' => ['required', 'numeric', 'gt:0', 'max:300'],
+            'redundancy' => ['required', 'integer', 'min:3', 'max:15'],
             'preserve_color' => ['nullable', 'boolean'],
             'threshold' => ['nullable', 'integer', 'min:0', 'max:255'],
         ]);
@@ -48,7 +48,7 @@ final class EmbeddingController extends Controller
                 'watermark_image_path' => $storage->path($run['id'], $watermark),
                 'secret_key' => $validated['secret_key'],
                 'alpha' => (float) $validated['alpha'],
-                'redundancy' => (int) ($validated['redundancy'] ?? 1),
+                'redundancy' => (int) $validated['redundancy'],
                 'preserve_color' => (bool) ($validated['preserve_color'] ?? false),
                 'threshold' => (int) ($validated['threshold'] ?? 127),
                 'watermarked_image_path' => $storage->path($run['id'], $watermarked),
@@ -67,10 +67,12 @@ final class EmbeddingController extends Controller
             'watermarked_image' => $watermarked,
             'metadata_path' => $metadata,
             'alpha' => (float) $validated['alpha'],
+            'redundancy' => (int) $validated['redundancy'],
+            'threshold' => (int) ($validated['threshold'] ?? 127),
             'preserve_color' => (bool) ($validated['preserve_color'] ?? false),
         ]);
         $request->session()->forget('watermark_metrics');
 
-        return redirect()->route('attack.index')->with('success', 'Embedding selesai. Citra watermarked tersimpan privat di server.');
+        return redirect()->route('embedding.index')->with('success', 'Embedding selesai. Citra watermarked tersimpan privat di server.');
     }
 }

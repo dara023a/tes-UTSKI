@@ -44,14 +44,14 @@
 
             <div class="field">
               <label>Alpha (Kekuatan Watermark)</label>
-              <input type="number" name="alpha" step="any" min="0" value="<?php echo e(old('alpha')); ?>" placeholder="cth: 0.1 atau 5" required>
+              <input type="number" name="alpha" step="any" min="0" value="<?php echo e(old('alpha', config('watermark.default_params.alpha'))); ?>" placeholder="cth: 0.1 atau 5" required>
               <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Masukkan nilai alpha yang ditentukan untuk eksperimen.</small>
             </div>
 
             <div class="field">
               <label>Redundancy</label>
-              <input type="number" name="redundancy" min="1" value="<?php echo e(old('redundancy', 1)); ?>">
-              <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Default engine: 1.</small>
+              <input type="number" name="redundancy" min="1" value="<?php echo e(old('redundancy', config('watermark.default_params.redundancy'))); ?>">
+              <small style="color:var(--slate);font-size:12px;display:block;margin-top:2px">Default engine: 3.</small>
             </div>
 
             <div class="field">
@@ -85,8 +85,12 @@
             </div>
 
             <?php if($hasRun): ?>
-              <div class="banner-info" id="nextBanner" style="margin-top:20px;display:flex">
-                Citra ter-watermark tersimpan privat di server. Lanjutkan ke <a href="<?php echo e(route('attack.index')); ?>" style="color:var(--blue-dim);font-weight:600">halaman Attack →</a> untuk mengujinya, atau langsung ke <a href="<?php echo e(route('extraction.index')); ?>" style="color:var(--blue-dim);font-weight:600">Extraction</a> tanpa serangan.
+              <div class="banner-info" id="nextBanner" style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
+                <div>Citra ter-watermark tersimpan privat di server. Anda bisa melakukan embedding ulang dengan parameter berbeda, atau lanjut ke tahap berikutnya.</div>
+                <div style="display:flex;gap:12px">
+                  <a href="<?php echo e(route('attack.index')); ?>" class="btn btn-primary btn-sm">Lanjut ke Attack →</a>
+                  <a href="<?php echo e(route('extraction.index')); ?>" class="btn btn-outline btn-sm">Langsung ke Extraction →</a>
+                </div>
               </div>
             <?php endif; ?>
           </div>

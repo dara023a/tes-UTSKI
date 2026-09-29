@@ -1,0 +1,30 @@
+{
+  "watermark_shape": [
+    156,
+    156
+  ],
+  "block_size": 8,
+  "coeff_positions": [
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      4
+    ]
+  ],
+  "processed_image_size": [
+    1024,
+    1536
+  ],
+  "block_grid_shape": [
+    128,
+    192
+  ],
+  "alpha": 60,
+  "n_bits": 24336,
+  "redundancy": 1,
+  "binarize_threshold": 127,
+  "color_mode": "ycrcb_luma_only"
+}

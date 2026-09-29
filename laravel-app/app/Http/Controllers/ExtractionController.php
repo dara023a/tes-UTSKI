@@ -70,7 +70,19 @@ final class ExtractionController extends Controller
         }
 
         $metrics = $evaluation['metrics'];
-        $rows = $request->session()->get('watermark_metrics', []);
+        $nc = (float) $metrics['ncc'];
+        $threshDetected = (float) config('watermark.nc_threshold.detected', 0.75);
+        $threshWeak = (float) config('watermark.nc_threshold.weak', 0.40);
+        $status = 'Gagal';
+        $statusClass = 'err';
+        if ($nc >= $threshDetected) {
+            $status = 'Terdeteksi';
+            $statusClass = 'ok';
+        } elseif ($nc >= $threshWeak) {
+            $status = 'Melemah';
+            $statusClass = 'warn';
+        }
+
         $rows[] = [
             'created_at' => now()->toIso8601String(),
             'attack_type' => $run['attack_type'] ?? 'none',
@@ -79,13 +91,15 @@ final class ExtractionController extends Controller
             'ber' => $metrics['ber'],
             'psnr' => $metrics['psnr'],
             'ssim' => $metrics['ssim'],
+            'status' => $status,
+            'status_class' => $statusClass,
         ];
 
         $run['extracted_image'] = $extracted;
         $request->session()->put('watermark_run', $run);
         $request->session()->put('watermark_metrics', $rows);
 
-        return redirect()->route('evaluation.index')
+        return redirect()->route('extraction.index')
             ->with('success', 'Blind extraction selesai. NC, BER, PSNR, dan SSIM dihitung oleh engine Python.');
     }
 }
